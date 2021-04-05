@@ -83,117 +83,123 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
       // Each instruction in the bundle carries with it, its full pc.
       bundle[pos].pc = (pc + (pos << 2));
 
-      // convert {pc, pos} to {btb_bank, btb_pc}
-      convert(pc, pos, btb_bank, btb_pc);
+      if (bundle[pos].exception) {
+         // The offending instruction is a NOP.
+         bundle[pos].branch = false;
+	 bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
 
-      // Search for the instruction in its bank.
-      if (search(btb_bank, btb_pc, set, way)) {
-         // BTB hit.  The BTB coordinates of this branch are {btb_bank, set, way}.
-         bundle[pos].branch = true;
-         bundle[pos].branch_type = btb[btb_bank][set][way].branch_type;
-
-         // Update LRU.
-	 update_lru(btb_bank, set, way);
-
-	 // (1) Determine the instruction's next_pc field (i.e., pc of the next instruction, which may be in the same bundle or at the start of the next bundle).
-	 // (2) Determine if this is the last instruction in the bundle.
-	 //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	 // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
-	 switch (bundle[pos].branch_type) {
-	    case BTB_BRANCH:
-	       // Increment the number of conditional branches in the fetch bundle.
-	       num_cond_branch++;
-
-	       // The low two bits of cb_predictions correspond to the next two-bit counter to examine (because we shift it right, subsequently).
-	       // From this two-bit counter, set the taken flag, accordingly.
-	       taken = ((cb_predictions & 3) >= 2);
-
-	       // Shift out the used-up 2-bit counter, to set up prediction of the next conditional branch.
-	       cb_predictions = (cb_predictions >> 2);
-
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = (taken ?  btb[btb_bank][set][way].target : INCREMENT_PC(bundle[pos].pc));
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       if (taken || (num_cond_branch == cond_branch_per_cycle))
-	          terminated = true;
-
-	       break;
-
-	    case BTB_JUMP_DIRECT:
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = btb[btb_bank][set][way].target;
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       terminated = true;
-	       break;
-
-	    case BTB_CALL_DIRECT:
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = btb[btb_bank][set][way].target;
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       terminated = true;
-
-	       // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
-	       update->push_ras = true;
-	       update->push_ras_pc = INCREMENT_PC(bundle[pos].pc);
-	       break;
-
-	    case BTB_JUMP_INDIRECT:
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = ib_predicted_target;
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       terminated = true;
-	       break;
-
-	    case BTB_CALL_INDIRECT:
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = ib_predicted_target;
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       terminated = true;
-
-	       // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
-	       update->push_ras = true;
-	       update->push_ras_pc = INCREMENT_PC(bundle[pos].pc);
-	       break;
-
-	    case BTB_RETURN:
-	       // (1) Determine the instruction's next_pc field.
-	       bundle[pos].next_pc = ras_predicted_target;
-
-	       // (2) Determine if this is the last instruction in the bundle.
-	       //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
-	       terminated = true;
-
-	       // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
-	       update->pop_ras = true;
-	       break;
-
-	    default:
-	       // All possible branch types are enumerated above.
-	       assert(0);
-	       break;
-	 }
+         // Terminate the fetch bundle at the offending instruction.
+         terminated = true;
       }
       else {
-	 // BTB miss.
-         bundle[pos].branch = false;
+         // convert {pc, pos} to {btb_bank, btb_pc}
+         convert(pc, pos, btb_bank, btb_pc);
 
-	 // (1) Determine the instruction's next_pc field.
-	 bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
+         // Search for the instruction in its bank.
+         if (search(btb_bank, btb_pc, set, way)) {
+            // BTB hit.  The BTB coordinates of this branch are {btb_bank, set, way}.
+            bundle[pos].branch = true;
+            bundle[pos].branch_type = btb[btb_bank][set][way].branch_type;
+
+            // Update LRU.
+	    update_lru(btb_bank, set, way);
+
+	    // (1) Determine the instruction's next_pc field (i.e., pc of the next instruction, which may be in the same bundle or at the start of the next bundle).
+	    // (2) Determine if this is the last instruction in the bundle.
+	    //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	    // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
+	    switch (bundle[pos].branch_type) {
+	       case BTB_BRANCH:
+	          // Increment the number of conditional branches in the fetch bundle.
+	          num_cond_branch++;
+
+	          // The low two bits of cb_predictions correspond to the next two-bit counter to examine (because we shift it right, subsequently).
+	          // From this two-bit counter, set the taken flag, accordingly.
+	          taken = ((cb_predictions & 3) >= 2);
+
+	          // Shift out the used-up 2-bit counter, to set up prediction of the next conditional branch.
+	          cb_predictions = (cb_predictions >> 2);
+
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = (taken ?  btb[btb_bank][set][way].target : INCREMENT_PC(bundle[pos].pc));
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          if (taken || (num_cond_branch == cond_branch_per_cycle))
+	             terminated = true;
+
+	          break;
+
+	       case BTB_JUMP_DIRECT:
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = btb[btb_bank][set][way].target;
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          terminated = true;
+	          break;
+
+	       case BTB_CALL_DIRECT:
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = btb[btb_bank][set][way].target;
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          terminated = true;
+
+	          // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
+	          update->push_ras = true;
+	          update->push_ras_pc = INCREMENT_PC(bundle[pos].pc);
+	          break;
+
+	       case BTB_JUMP_INDIRECT:
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = ib_predicted_target;
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          terminated = true;
+	          break;
+
+	       case BTB_CALL_INDIRECT:
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = ib_predicted_target;
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          terminated = true;
+
+	          // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
+	          update->push_ras = true;
+	          update->push_ras_pc = INCREMENT_PC(bundle[pos].pc);
+	          break;
+
+	       case BTB_RETURN:
+	          // (1) Determine the instruction's next_pc field.
+	          bundle[pos].next_pc = ras_predicted_target;
+
+	          // (2) Determine if this is the last instruction in the bundle.
+	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
+	          terminated = true;
+
+	          // (3) Record push_ras/pop_ras information in the "update" variable, which is needed by the Fetch Unit to speculatively update its RAS.
+	          update->pop_ras = true;
+	          break;
+
+	       default:
+	          // All possible branch types are enumerated above.
+	          assert(0);
+	          break;
+	    }
+         }
+         else {
+	    // BTB miss.
+            bundle[pos].branch = false;
+
+	    // (1) Determine the instruction's next_pc field.
+	    bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
+         }
       }
-
-      // Whether or not terminated was already set to true above, set it to true here, if the instruction cache posted an exception in this slot.
-      if (bundle[pos].exception)
-         terminated = true;
 
       // Go to the next instruction in the fetch bundle.
       pos++;

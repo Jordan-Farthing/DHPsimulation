@@ -199,6 +199,11 @@ public:
 
 	// Output all branch prediction measurements.
 	void output(uint64_t num_instr, uint64_t num_cycles, FILE *fp);
+	
+	//DHP Fix
+	//microbenchmark reset
+	//Reset all the measurements
+	void reset_stats();
 
 	// Public functions for setting and getting the speculative pc directly.
 	void setPC(uint64_t pc);

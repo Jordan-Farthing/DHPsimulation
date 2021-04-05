@@ -87,6 +87,14 @@ void pipeline_t::retire(size_t& instret) {
       }
 
       if (!exception && !load_viol) {
+
+         //DHP FIX
+         //my if.cc microbenchmark to reset counter IPC
+         if(PAY.buf[PAY.head].pc == 0x1a59c) {
+            stats->reset_counters();
+            FetchUnit->reset_stats();
+         }
+
 	 //
          // FIX_ME #17b
 	 // Commit the instruction at the head of the active list.

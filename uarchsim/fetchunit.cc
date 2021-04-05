@@ -341,7 +341,7 @@ bool fetchunit_t::fetch2(pipeline_register DECODE[]) {
       switch (PAY->buf[index].inst.opcode()) {
          case OP_AMO:
          case OP_SYSTEM:
-	 case OP_MISC_MEM:
+	 //case OP_MISC_MEM:  // FIX_ME: Make fence a serializing instruction, add fence flag to Active List, and reference this flag to full squash at Retire stage.
 	    serialize = true;
 
 	    // If the serializing instruction is not in the last possible slot,
@@ -536,19 +536,10 @@ void fetchunit_t::mispredict(uint64_t branch_pred_tag, bool taken, uint64_t next
    assert(bq.bq[pred_tag].next_pc != next_pc);
    bq.bq[pred_tag].next_pc = next_pc;
 
-   if (bq.bq[pred_tag].branch_type == BTB_BRANCH) {
+   if (bq.bq[pred_tag].branch_type == BTB_BRANCH)
       assert(bq.bq[pred_tag].taken != taken);
-      bq.bq[pred_tag].taken = taken;
-   }
-   else {
-      //assert(taken);
-      if (!taken) {
-         //printf("*** WARNING: unconditional jump to next sequential pc (can happen for first case of a switch() statement).\n");
-	 assert(bq.bq[pred_tag].branch_type == BTB_JUMP_INDIRECT);
-	 meas_jumpind_seq++;
-      }
-      assert(bq.bq[pred_tag].taken);
-   }
+
+   bq.bq[pred_tag].taken = taken;
  
    // 3. Restore checkpointed global histories and the RAS (as best we can for RAS).
 
@@ -658,6 +649,10 @@ void fetchunit_t::commit(uint64_t branch_pred_tag) {
 	    meas_jumpind_n++;
 	    if (bq.bq[pred_tag].misp)
 	       meas_jumpind_m++;
+
+            // Check for, and count, an unconditional jump to the next sequential pc (can happen for first case of a switch() statement).
+	    if (!bq.bq[pred_tag].taken)
+	       meas_jumpind_seq++;
 	 }
 	 else {
 	    meas_callind_n++;
@@ -745,3 +740,21 @@ uint64_t fetchunit_t::getPC() {
 bool fetchunit_t::active() {
    return(fetch_active);
 }
+void fetchunit_t::reset_stats(){
+    meas_branch_n = 0;	// # branches
+    meas_jumpdir_n = 0;	// # jumps, direct
+    meas_calldir_n = 0;	// # calls, direct
+    meas_jumpind_n = 0;	// # jumps, indirect
+    meas_callind_n = 0;	// # calls, indirect
+    meas_jumpret_n = 0;	// # jumps, return
+
+    meas_branch_m = 0;	// # mispredicted branches
+    meas_jumpind_m = 0;	// # mispredicted jumps, indirect
+    meas_callind_m = 0;	// # mispredicted calls, indirect
+    meas_jumpret_m = 0;	// # mispredicted jumps, return
+
+    meas_jumpind_seq = 0;// # jump-indirect instructions whose targets were the next sequential PC
+
+    meas_btbmiss = 0;	// # of btb misses, i.e., number of discarded fetch bundles (idle fetch cycles) due to a btb miss within the bundle
+}
+
