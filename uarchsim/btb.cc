@@ -9,7 +9,6 @@
 #include "fetchunit_types.h"
 #include "btb.h"
 
-
 btb_t::btb_t(uint64_t num_entries, uint64_t banks, uint64_t assoc, uint64_t cond_branch_per_cycle) {
    this->banks = banks;
    this->sets = (num_entries/(banks*assoc));
@@ -61,7 +60,9 @@ btb_t::~btb_t() {
 //    - How many conditional branches are in the assembled fetch bundle, to know how many predictions to shift into its BHRs.
 //    - Whether or not it needs to pop the RAS.
 //    - Whether or not it needs to push the RAS, and, if so, which pc to push onto the RAS.
-void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update) {
+//DHP FIX
+//added argument struct ideal table
+void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC) {
    uint64_t btb_bank;
    uint64_t btb_pc;
    uint64_t set;
@@ -77,16 +78,22 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
    update->push_ras = false;
 
    while ((pos < banks) && !terminated) {	// "pos" is position of the instruction within the maximum-length sequential fetch bundle.
-      // This instruction in the bundle is valid.
+       // This instruction in the bundle is valid.
       bundle[pos].valid = true;
 
       // Each instruction in the bundle carries with it, its full pc.
       bundle[pos].pc = (pc + (pos << 2));
 
+      //DHP fix
+      //if branch hammock found, terminate lookup, set state machine control variable to HAMMOCK_FOUND
+      if(bundle[pos].pc==Branch_PC){
+          terminated=true;
+      }
+
       if (bundle[pos].exception) {
          // The offending instruction is a NOP.
          bundle[pos].branch = false;
-	 bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
+         bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
 
          // Terminate the fetch bundle at the offending instruction.
          terminated = true;
@@ -126,8 +133,7 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
 	          // (2) Determine if this is the last instruction in the bundle.
 	          //     End the fetch bundle at any taken branch or at the maximum number of conditional branches.
 	          if (taken || (num_cond_branch == cond_branch_per_cycle))
-	             terminated = true;
-
+	              terminated = true;
 	          break;
 
 	       case BTB_JUMP_DIRECT:
@@ -193,11 +199,11 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
 	    }
          }
          else {
-	    // BTB miss.
-            bundle[pos].branch = false;
+             // BTB miss.
+             bundle[pos].branch = false;
 
-	    // (1) Determine the instruction's next_pc field.
-	    bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
+             // (1) Determine the instruction's next_pc field.
+             bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
          }
       }
 

@@ -697,3 +697,5 @@ void pipeline_t::set_branch_misprediction(unsigned int al_index) {
 void pipeline_t::set_value_misprediction(unsigned int al_index) {
    REN->set_value_misprediction(al_index);
 }
+
+

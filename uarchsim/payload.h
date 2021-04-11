@@ -32,6 +32,12 @@ typedef struct {
    // Set by Fetch1 Stage.
    ////////////////////////
 
+   //DHP FIX
+   //Record in fetch if instruction is valid predicate instr or not
+   //Record if instruction is in correct region(true) or dead instruction(false)
+   bool valid_predicate;
+   bool correct_region;
+
    insn_t inst;                 // The RISCV instruction.
    reg_t pc;                    // The instruction's PC.
    reg_t next_pc;               // The next instruction's PC. (I.e., the PC of the instruction fetched after this one.)
@@ -233,7 +239,9 @@ public:
 	void pop();
 	void clear();
 	void split(unsigned int index);
-	void map_to_actual(pipeline_t* proc,unsigned int index);
+	//DHP Fix
+	//add inherit_prev argument for hammock region functionality
+	void map_to_actual(pipeline_t* proc,unsigned int index, bool inherit_prev);
 	void rollback(unsigned int index);
 	unsigned int checkpoint();
 	void restore(unsigned int index);

@@ -123,6 +123,42 @@ private:
 	void squash_fetch2();
 
 public:
+	//DHP FIX
+	//control variable for state machine
+	//counter for instructions left in state
+    enum state_machine {
+        IDLE,
+        TAKEN,
+        NOT_TAKEN,
+        FINISH_TAKEN,
+        FINISH_NOT_TAKEN,
+        CMOVE
+    };
+	enum state_machine state_machine;
+	uint64_t instr_counter;
+    //DHP FIX
+    //branch hammock info table
+    //1 branch_PC
+    //2 #instructions in then
+    //3 #instructions in else
+    //4 reconvergance PC
+    //5 Logical Register (if applicable)
+    //6 Logical Register (if applicable)
+    //7 Logical Register (if applicable)
+    //8 Logical Register (if applicable)
+    struct hammock{
+        uint64_t branch_PC;
+        uint64_t instr_then;
+        uint64_t instr_else;
+		uint64_t instr_total;
+        uint64_t reconv_PC;
+        uint64_t log1;
+        uint64_t log2;
+        uint64_t log3;
+        uint64_t log4;
+    }hammock;
+    struct hammock* ideal_table;
+
 	fetchunit_t(uint64_t instr_per_cycle,				// "n"
 	            uint64_t cond_branch_per_cycle,			// "m"
 	            uint64_t btb_entries,				// total number of entries in the BTB
@@ -154,7 +190,7 @@ public:
 	// The fetch bundle is placed in the FETCH2 pipeline register that separates the Fetch1 and Fetch2 stages.
 	// Checkpoint (in fetch2_status) and then speculatively update the Fetch1 stage's pc, BHRs, etc., to set up for the next fetch cycle.
 	// The caller of fetch1() passes in the current cycle so that the Fetch1 stage can model the cycle at which an instruction cache miss resolves.
-        void fetch1(cycle_t cycle);
+	void fetch1(cycle_t cycle);
 
 	// Fetch2 pipeline stage.
 	// If it returns true: call fetchunit_t::fetch1() after.

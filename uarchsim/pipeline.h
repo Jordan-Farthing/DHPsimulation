@@ -389,6 +389,8 @@ public:
 	uint64_t num_insn_split;
 
 
+
+
 	// Functions for pipeline stages.
 	void fetch();
 	void decode();

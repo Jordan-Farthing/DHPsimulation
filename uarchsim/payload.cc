@@ -68,7 +68,8 @@ void payload::split(unsigned int index) {
 }
 
 // Mapping of instructions to actual (functional simulation) instructions.
-void payload::map_to_actual(pipeline_t* proc, unsigned int index) {
+//DHP FIX added inherit_prev to function
+void payload::map_to_actual(pipeline_t* proc, unsigned int index, bool inherit_prev) {
 	unsigned int prev_index;
 	bool         first;
 	debug_index_t db_index;
@@ -78,6 +79,14 @@ void payload::map_to_actual(pipeline_t* proc, unsigned int index) {
 	//////////////////////////////
 	prev_index = MOD((index + PAYLOAD_BUFFER_SIZE - 2), PAYLOAD_BUFFER_SIZE);
 	first = (index == head);
+
+	//DHP FIX
+	if (inherit_prev) {
+		assert(!first);
+		buf[index].good_instruction = buf[prev_index].good_instruction;
+		buf[index].db_index = buf[prev_index].db_index;
+		return;
+	}
 
 	////////////////////////////
 	// Calculate and set state.

@@ -42,6 +42,8 @@ private:
 public:
 	btb_t(uint64_t num_entries, uint64_t banks, uint64_t assoc, uint64_t cond_branch_per_cycle);
 	~btb_t();
-        void lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update);
+	//DHP FIX
+	//add argument Branch PC
+        void lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC);
 	void update(uint64_t pc, uint64_t pos, insn_t insn);
 };
