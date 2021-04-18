@@ -1,4 +1,3 @@
-
 // A BTB entry.
 typedef
 struct {
@@ -44,6 +43,7 @@ public:
 	~btb_t();
 	//DHP FIX
 	//add argument Branch PC
-        void lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC);
+	//add normal variable to do normal btb lookup or just sequential variable set.
+        void lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC, bool normal);
 	void update(uint64_t pc, uint64_t pos, insn_t insn);
 };

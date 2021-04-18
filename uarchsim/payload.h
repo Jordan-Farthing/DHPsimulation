@@ -37,6 +37,8 @@ typedef struct {
    //Record if instruction is in correct region(true) or dead instruction(false)
    bool valid_predicate;
    bool correct_region;
+   //DHP FIX
+   bool mux;
 
    insn_t inst;                 // The RISCV instruction.
    reg_t pc;                    // The instruction's PC.

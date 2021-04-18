@@ -175,9 +175,9 @@ void pipeline_t::decode() {
 		switch (inst.opcode()) {
 
 			case OP_JAL:
-				// dest register
-				PAY.buf[index].C_valid = true;
-				PAY.buf[index].C_log_reg = inst.rd();  // This should be either x1 or x0 as per software calling conventions
+			    // dest register
+			    PAY.buf[index].C_valid = true;
+			    PAY.buf[index].C_log_reg = inst.rd();  // This should be either x1 or x0 as per software calling conventions
 				break;
 
 			case OP_JALR:
@@ -250,37 +250,63 @@ void pipeline_t::decode() {
 
 			case OP_OP:
 			case OP_OP_32:  // valid only in 64bit mode - illegal inst exception in 32 bit mode
-				// first source register
-				PAY.buf[index].A_valid = true;
-				PAY.buf[index].A_log_reg = inst.rs1();
-				// second source register
-				PAY.buf[index].B_valid = true;
-				PAY.buf[index].B_log_reg = inst.rs2();
-				// dest register
-				PAY.buf[index].C_valid = true;
-				PAY.buf[index].C_log_reg = inst.rd();
+                //DHP FIX for branch PC
+                if(PAY.buf[index].mux){
+                    //will include a source reg and dest reg
+                    PAY.buf[index].A_valid
+                    PAY.buf[index].A_log_reg = inst.rs1();
+                    PAY.buf[index].C_valid = true;
+                    PAY.buf[index].C_log_reg = inst.rd();
+                }
+                else {
+                    // first source register
+                    PAY.buf[index].A_valid = true;
+                    PAY.buf[index].A_log_reg = inst.rs1();
+                    // second source register
+                    PAY.buf[index].B_valid = true;
+                    PAY.buf[index].B_log_reg = inst.rs2();
+                    // dest register
+                    PAY.buf[index].C_valid = true;
+                    PAY.buf[index].C_log_reg = inst.rd();
+                }
 				break;
 
 
 			case OP_OP_IMM:
 			case OP_OP_IMM_32:  // valid only in 64bit mode - illegal inst exception in 32 bit mode
-        if(inst.bits() == INSN_NOP){
-          // Select IQ.
-          PAY.buf[index].iq = SEL_IQ_NONE;
+			//DHP FIX
+			//use this instr for CMOVE
+			//use all three source registers and label as true.
+			//if mux instr for CMOVe then do code, otherwise do normal.
+			if(PAY.buf[index].mux){
+                PAY.buf[index].A_valid = true;
+                PAY.buf[index].A_log_reg = inst.rs1();
+                PAY.buf[index].B_valid = true;
+                PAY.buf[index].B_log_reg = inst.rs2();
+                PAY.buf[index].C_valid = true;
+                PAY.buf[index].C_log_reg = inst.rd();
+                PAY.buf[index].D_valid = true;
+                PAY.buf[index].D_log_reg = inst.rs3();
+			}
+			else {
+                if (inst.bits() == INSN_NOP) {
+                    // Select IQ.
+                    PAY.buf[index].iq = SEL_IQ_NONE;
 
-	  // 3/20/19: Fix for checker.
-          PAY.buf[index].A_valid = true;
-          PAY.buf[index].A_log_reg = inst.rs1();
-	  assert(PAY.buf[index].A_log_reg == 0);
-          PAY.buf[index].A_value.dw = 0;
-        } else {
-				  // source register
-				  PAY.buf[index].A_valid = true;
-				  PAY.buf[index].A_log_reg = inst.rs1();
-				  // dest register
-				  PAY.buf[index].C_valid = true;
-				  PAY.buf[index].C_log_reg = inst.rd();
-        }
+                    // 3/20/19: Fix for checker.
+                    PAY.buf[index].A_valid = true;
+                    PAY.buf[index].A_log_reg = inst.rs1();
+                    assert(PAY.buf[index].A_log_reg == 0);
+                    PAY.buf[index].A_value.dw = 0;
+                } else {
+                    // source register
+                    PAY.buf[index].A_valid = true;
+                    PAY.buf[index].A_log_reg = inst.rs1();
+                    // dest register
+                    PAY.buf[index].C_valid = true;
+                    PAY.buf[index].C_log_reg = inst.rd();
+                }
+            }
 				break;
 
 

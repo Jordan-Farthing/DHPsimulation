@@ -101,6 +101,17 @@ public:
   uint64_t shamt() {return x(20, 6); }
   uint32_t ldst_size() {return (1 << x(12,2)); }
   bool     ldst_sign() {return !x(14,1); }  // unsigned if 1 signed if 0
+  //DHP FIX
+  //adding set functions to registers and opcode for CMOV and Branch MUX
+  void clear(){b=0;}
+  void set_rs1(uint64_t r) { b|=((r&31)<<15);}
+  void set_rs2(uint64_t r) { b|=((r&31)<<20);}
+  void set_rs3(uint64_t r) { b|=((r&31)<<27);}
+  void set_rd(uint64_t r) { b|=((r&31)<<7);}
+  void set_opcode(uint64_t r) { b|=(r&127);}
+
+
+
 
 private:
   insn_bits_t b;

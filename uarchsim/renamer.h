@@ -483,7 +483,9 @@ public:
     // This is why you should assert() that it is valid to commit the
     // head instruction and otherwise cause the simulator to exit.
     /////////////////////////////////////////////////////////////////////
-    void commit();
+    //DHP FIX
+    //using flag for predicate
+    void commit(bool correct);
 
     //////////////////////////////////////////////////////////////////////
     // Squash the renamer class.

@@ -126,15 +126,16 @@ public:
 	//DHP FIX
 	//control variable for state machine
 	//counter for instructions left in state
-    enum state_machine {
+    typedef enum state_machine {
         IDLE,
         TAKEN,
         NOT_TAKEN,
         FINISH_TAKEN,
         FINISH_NOT_TAKEN,
+        FINISH_TAKEN_ELSE,
         CMOVE
-    };
-	enum state_machine state_machine;
+    }state_machine_t;
+	state_machine_t state_machine;
 	uint64_t instr_counter;
     //DHP FIX
     //branch hammock info table

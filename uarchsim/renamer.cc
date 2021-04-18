@@ -300,26 +300,37 @@ bool renamer::precommit(bool &completed,
         return true;
     }
 }
-
-void renamer::commit(){
+//DHP FIX
+//using flag for predicate commit
+void renamer::commit(bool correct){
     assert(!((Active_List.head==Active_List.tail)&&(Active_List.full==0)));
     assert(Active_List.table[Active_List.head][4]==1);
     assert(Active_List.table[Active_List.head][5]==0);
     assert(Active_List.table[Active_List.head][6]==0);
-    if(Active_List.table[Active_List.head][1]){
-        //need to copy AMT pReg to Free List Tail since we have dest register pReg to replace it in AMT.
-        //assert free list is not full
-        Free_List.table[Free_List.tail]=AMT[Active_List.table[Active_List.head][2]];
-        Free_List.tail=(Free_List.tail+1)%Free_List.size;
-        Free_List.empty=0;
-        //only thing different is to add dst reg to AMT
-        AMT[Active_List.table[Active_List.head][2]] = Active_List.table[Active_List.head][3];
-        Active_List.head=(Active_List.head+1)%Active_List.size;
+    if (correct) {
+        if (Active_List.table[Active_List.head][1]) {
+            //need to copy AMT pReg to Free List Tail since we have dest register pReg to replace it in AMT.
+            //assert free list is not full
+            Free_List.table[Free_List.tail] = AMT[Active_List.table[Active_List.head][2]];
+            Free_List.tail = (Free_List.tail + 1) % Free_List.size;
+            Free_List.empty = 0;
+            //only thing different is to add dst reg to AMT
+            AMT[Active_List.table[Active_List.head][2]] = Active_List.table[Active_List.head][3];
+            Active_List.head = (Active_List.head + 1) % Active_List.size;
+        } else {
+            Active_List.head = (Active_List.head + 1) % Active_List.size;
+        }
+        Active_List.full = 0;
     }
+    //DHP FIX use this case when it is not correct region in predicate
     else{
-        Active_List.head=(Active_List.head+1)%Active_List.size;
+        //assert free list is not full
+        Free_List.tail = (Free_List.tail + 1) % Free_List.size;
+        Free_List.empty = 0;
+        //only thing different is to add dst reg to AMT
+        Active_List.head = (Active_List.head + 1) % Active_List.size;
+        Active_List.full = 0;
     }
-    Active_List.full=0;
 }
 
 void renamer::squash(){

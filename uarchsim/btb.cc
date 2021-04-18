@@ -62,7 +62,7 @@ btb_t::~btb_t() {
 //    - Whether or not it needs to push the RAS, and, if so, which pc to push onto the RAS.
 //DHP FIX
 //added argument struct ideal table
-void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC) {
+void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_target, uint64_t ras_predicted_target, fetch_bundle_t bundle[], spec_update_t *update, uint64_t Branch_PC,bool normal) {
    uint64_t btb_bank;
    uint64_t btb_pc;
    uint64_t set;
@@ -85,9 +85,17 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
       bundle[pos].pc = (pc + (pos << 2));
 
       //DHP fix
-      //if branch hammock found, terminate lookup, set state machine control variable to HAMMOCK_FOUND
-      if(bundle[pos].pc==Branch_PC){
-          terminated=true;
+      //if branch hammock found, ignore normal btb action set non branch states, valid bit, pc, next_pc (sequential), branch (false)
+      //if not in IDLE,normal is false
+      if((bundle[pos].pc==Branch_PC)||(!normal)){
+          while(pos < banks){
+              bundle[pos].valid = true;
+              bundle[pos].pc = (pc + (pos << 2));
+              bundle[pos].branch = false;
+              bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
+              pos++;
+      }
+          return;
       }
 
       if (bundle[pos].exception) {

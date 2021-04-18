@@ -150,7 +150,11 @@ void fetchunit_t::transfer_fetch_bundle() {
       PAY->buf[index].fetch_exception_cause = fetch_bundle[pos].exception_cause;
 
       //DHP FIX
-      //set payload buf for rename stage if instr is predicate or not
+      //every instruction by default is not a mux
+      PAY->buf[index].mux=false;
+
+      //DHP FIX
+      //set payload buf for rename stage if instr is in predicate or not
       (state_machine==IDLE)?(PAY->buf[index].valid_predicate=false):(PAY->buf[index].valid_predicate=true);
 
       //////////////////////////////////////////////////////
@@ -166,11 +170,22 @@ void fetchunit_t::transfer_fetch_bundle() {
       // Do not do map_to_actual on instructions that will not be in functional simulator.
       // actual = get_pipe()->peek(PAY.buf[index].db_index);
       if (PAY->buf[index].pc==ideal_table->branch_PC){
+          //need to set the destination register for branch for CMOV to depend on.
+          //the destination register is gonna be an reg 31
+          PAY->buf[index].inst.set_rs1(4);
+          PAY->buf[index].inst.set_rd(31);
+          //insert OP_OP_32 opcode (0x6f)
+          PAY->buf[index].inst.set_opcode(0x13);
+          //mux is true to execute this branch differently in decode and alu.
+          PAY->buf[index].mux=true;
           //should be IDLE state when this happens
           assert(state_machine==IDLE);
           db_t *actual;
+          uint64_t prev;
+          debug_index_t db_index;
           //unsure if this is correct db_index
-          actual = proc->get_pipe()->peek(PAY->buf[index].db_index);
+          db_index =proc->get_pipe()->check_next(PAY->buf[index-1].db_index, pc);
+          actual = proc->get_pipe()->peek(db_index);
           (actual->a_next_pc != INCREMENT_PC(actual->a_pc)?state_machine=TAKEN:state_machine=NOT_TAKEN;
           if(state_machine==TAKEN){
               instr_counter=(ideal_table->instr_total)-(ideal_table->instr_then)-(ideal_table->instr_else);
@@ -178,68 +193,87 @@ void fetchunit_t::transfer_fetch_bundle() {
           if(state_machine==NOT_TAKEN){
               instr_counter=ideal_table->instr_total-ideal_table->instr_else;
           }
-
+          PAY->map_to_actual(proc, index, true);
       }
-
+      else {
 /*       ideal_table->branch_PC=0x1a5b0;
        ideal_table->instr_then=1;
        ideal_table->instr_else=0;
        ideal_table->instr_total=2;
        ideal_table->reconv_PC=0x1a5bc;
        ideal_table->log1=1;*/
-
-       switch(state_machine) {
-           case IDLE:
-               PAY->map_to_actual(proc,index,false);
-               break;
-           case TAKEN:
-               instr_counter--;
-               PAY->map_to_actual(proc,index,true);
-               PAY->buf[index].correct_region=false;
-               if(instr_counter==0){
-                   state_machine=FINISH_TAKEN;
-                   instr_counter=ideal_table->instr_then;
-               }
-               break;
-           case FINISH_TAKEN:
-               instr_counter--;
-               PAY->map_to_actual(proc,index,false);
-               PAY->buf[index].correct_region=true;
-               if(instr_counter==0){
-                   if(!ideal_table->instr_else){
-                       state_machine=CMOVE;
-                   }
-                   else{
-                       instr_counter=ideal_table->instr_else;
-                       state_machine=FINISH_NOT_TAKEN;
-                   }
-               }
-               break;
-           case NOT_TAKEN:
-               instr_counter--;
-               PAY->map_to_actual(proc,index,true);
-               PAY->buf[index].correct_region=false;
-               if(instr_counter==0){
-                   if(!ideal_table->instr_else)
-                       state_machine=CMOVE;
-                   else{
-                       instr_counter=ideal_table->instr_else;
-                       state_machine=FINISH_NOT_TAKEN;
-                   }
-               }
-               break;
-           case FINISH_NOT_TAKEN:
-               instr_counter--;
-               PAY->map_to_actual(proc,index,false);
-               PAY->buf[index].correct_region=true;
-               if(instr_counter==0){
-                   state_machine=CMOVE;
-               }
-               break;
-           case CMOVE:
-               state_machine=IDLE;
-               break;
-       }
+          switch (state_machine) {
+              case IDLE:
+                  PAY->map_to_actual(proc, index, false);
+                  break;
+              case TAKEN:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, true);
+                  PAY->buf[index].correct_region = false;
+                  if (instr_counter == 0) {
+                      state_machine = FINISH_TAKEN;
+                      instr_counter = ideal_table->instr_then;
+                  }
+                  break;
+              case FINISH_TAKEN:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, false);
+                  PAY->buf[index].correct_region = true;
+                  if (instr_counter == 0) {
+                      if (!ideal_table->instr_else) {
+                          state_machine = CMOVE;
+                      } else {
+                          instr_counter = ideal_table->instr_else;
+                          state_machine = FINISH_TAKEN_ELSE;
+                      }
+                  }
+                  break;
+              case NOT_TAKEN:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, false);
+                  PAY->buf[index].correct_region = true;
+                  if (instr_counter == 0) {
+                      if (!ideal_table->instr_else)
+                          state_machine = CMOVE;
+                      else {
+                          instr_counter = ideal_table->instr_else;
+                          state_machine = FINISH_NOT_TAKEN;
+                      }
+                  }
+                  break;
+              case FINISH_NOT_TAKEN:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, false);
+                  PAY->buf[index].correct_region = true;
+                  if (instr_counter == 0) {
+                      state_machine = CMOVE;
+                  }
+                  break;
+              case FINISH_TAKEN_ELSE:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, true);
+                  PAY->buf[index].correct_region = false;
+                  if (instr_counter == 0) {
+                      state_machine = CMOVE;
+                  }
+                  break;
+              case CMOVE:
+                  state_machine = IDLE;
+                  PAY->buf[index].mux=true;
+                  PAY->buf[index].inst.set_rs1(5);
+                  PAY->buf[index].inst.set_rs2(3);
+                  PAY->buf[index].inst.set_rs3(31);
+                  PAY->buf[index].inst.set_rd(1);
+                  //encoding value of OP OP IMM 32
+                  PAY->buf[index].inst.set_opcode(0x1b)
+                  // if pos is = instr_cycle - 1, then  change pc of next bundle to reconv PC
+                  PAY->map_to_actual(proc, index, true);
+                  pc=ideal_table->reconv_PC;
+                  FETCH2[pos].valid = true;
+                  FETCH2[pos].index = index;
+                  return;
+          }
+      }
 
       //////////////////////////////////////////////////////
       // Put the PAY index into the FETCH2 pipeline register.
@@ -339,10 +373,18 @@ void fetchunit_t::fetch1(cycle_t cycle) {
       // Nevertheless, conceptually, the instruction cache and BTB are searched in parallel.
 
       //DHP FIX
-      //if in IDLE state, then can lookup in BTB
-      if (!ic_miss&&(state_machine==IDLE))
+      //if in IDLE state, then can lookup in BTB as normally would
+      if (!ic_miss&&(state_machine==IDLE)) {
           //DHP FIX add the branch_PC as argument to BTB
-         btb.lookup(pc, cb_predictions, ib_predicted_target, ras_predicted_target, fetch_bundle, &update, ideal_table->branch_PC);
+          btb.lookup(pc, cb_predictions, ib_predicted_target, ras_predicted_target, fetch_bundle, &update,
+                     ideal_table->branch_PC,true);
+      }
+      //DHP FIX
+      //otherwise do call btb lookup but ignore branches and set all instructions sequential with proper variable set.
+      else if(!ic_miss){
+          btb.lookup(pc, cb_predictions, ib_predicted_target, ras_predicted_target, fetch_bundle, &update,
+                     ideal_table->branch_PC,false);
+      }
    }
 
    if (tc_hit || !ic_miss) {
@@ -506,6 +548,9 @@ bool fetchunit_t::fetch2(pipeline_register DECODE[]) {
       ib_index.set_bhr(fetch2_status.ib_bhr);
       ras.set_tos(fetch2_status.ras_tos);
       PAY->restore(fetch2_status.pay_checkpoint);
+      // DHP FIX
+      //set state machine back to IDLE after restore a mispredicted branch before DHP PC
+      state_machine=IDLE;
 
       // d. Return "false" from this function, to signal to the caller that it should NOT call fetchunit_t::fetch1()
       //    after this call to fetchunit_t::fetch2().  Rather, it should wait until the next cycle.
