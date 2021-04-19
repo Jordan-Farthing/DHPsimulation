@@ -94,7 +94,6 @@ void btb_t::lookup(uint64_t pc, uint64_t cb_predictions, uint64_t ib_predicted_t
               bundle[pos].branch = false;
               bundle[pos].next_pc = INCREMENT_PC(bundle[pos].pc);
               pos++;
-      }
           return;
       }
 

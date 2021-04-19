@@ -172,20 +172,18 @@ void fetchunit_t::transfer_fetch_bundle() {
       if (PAY->buf[index].pc==ideal_table->branch_PC){
           //need to set the destination register for branch for CMOV to depend on.
           //the destination register is gonna be an reg 31
+          PAY->buf[index].inst.clear();
           PAY->buf[index].inst.set_rs1(4);
-          PAY->buf[index].inst.set_rd(31);
-          //insert OP_OP_32 opcode (0x6f)
-          PAY->buf[index].inst.set_opcode(0x13);
+          PAY->buf[index].inst.set_rd(64);
+          //insert OP_OP_32 opcode (0x3b)
+          PAY->buf[index].inst.set_opcode(0x3b);
           //mux is true to execute this branch differently in decode and alu.
           PAY->buf[index].mux=true;
           //should be IDLE state when this happens
           assert(state_machine==IDLE);
           db_t *actual;
-          uint64_t prev;
-          debug_index_t db_index;
           //unsure if this is correct db_index
-          db_index =proc->get_pipe()->check_next(PAY->buf[index-1].db_index, pc);
-          actual = proc->get_pipe()->peek(db_index);
+          actual = proc->get_pipe()->peek(PAY->buf[index].db_index);
           (actual->a_next_pc != INCREMENT_PC(actual->a_pc)?state_machine=TAKEN:state_machine=NOT_TAKEN;
           if(state_machine==TAKEN){
               instr_counter=(ideal_table->instr_total)-(ideal_table->instr_then)-(ideal_table->instr_else);
@@ -193,7 +191,7 @@ void fetchunit_t::transfer_fetch_bundle() {
           if(state_machine==NOT_TAKEN){
               instr_counter=ideal_table->instr_total-ideal_table->instr_else;
           }
-          PAY->map_to_actual(proc, index, true);
+          PAY->map_to_actual(proc, index, false);
       }
       else {
 /*       ideal_table->branch_PC=0x1a5b0;
@@ -260,9 +258,10 @@ void fetchunit_t::transfer_fetch_bundle() {
               case CMOVE:
                   state_machine = IDLE;
                   PAY->buf[index].mux=true;
+                  PAY->buf[index].inst.clear();
                   PAY->buf[index].inst.set_rs1(5);
                   PAY->buf[index].inst.set_rs2(3);
-                  PAY->buf[index].inst.set_rs3(31);
+                  PAY->buf[index].inst.set_rs3(64);
                   PAY->buf[index].inst.set_rd(1);
                   //encoding value of OP OP IMM 32
                   PAY->buf[index].inst.set_opcode(0x1b)
@@ -274,7 +273,6 @@ void fetchunit_t::transfer_fetch_bundle() {
                   return;
           }
       }
-
       //////////////////////////////////////////////////////
       // Put the PAY index into the FETCH2 pipeline register.
       //////////////////////////////////////////////////////

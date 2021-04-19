@@ -137,71 +137,63 @@ void pipeline_t::alu(unsigned int index) {
 //
 
     case OP_OP_IMM:
-        //DHP FIX
-        // alu operation for hammock branch with destination reg
-        //if source reg is zero then set destination reg to 1 for taken, otherwise set to zero for not taken.
-        if(PAY.buf[index].mux){
-            (!PAY.buf[index].A_value.dw)?PAY.buf[index].C_value.dw=1:PAY.buf[index].C_value.dw=0;
-        }
-        else {
-            switch (inst.funct3()) {
-                //ADDI
-                case FN3_ADD_SUB:
-                    PAY.buf[index].C_value.sdw = PAY.buf[index].A_value.sdw + inst.i_imm();
-                    //// Check if this is NOP with a fetch exception.
-                    //// If so, throw the appropriate exception
-                    //if(PAY.buf[index].fetch_exception){
-                    //  if(PAY.buf[index].fetch_exception_cause == CAUSE_MISALIGNED_FETCH){
-                    //    throw new trap_instruction_address_misaligned(PAY.buf[index].pc);
-                    //  } else if(PAY.buf[index].fetch_exception_cause == CAUSE_FAULT_FETCH){
-                    //    throw new trap_instruction_access_fault(PAY.buf[index].pc);
-                    //  }
-                    //}
-                    break;
-                    //SLTI
-                case FN3_SLT:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.sdw < sreg_t(inst.i_imm()) ? reg_t(1) : reg_t(0);
-                    break;
-                    //SLTIU
-                case FN3_SLTU:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw < reg_t(inst.i_imm()) ? reg_t(1) : reg_t(0);
-                    break;
-                    //XORI
-                case FN3_XOR:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw ^ inst.i_imm();
-                    break;
-                    //ORI
-                case FN3_OR:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw | inst.i_imm();
-                    break;
-                    //ANDI
-                case FN3_AND:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw & inst.i_imm();
-                    break;
-                    //SLLI
-                case FN3_SLL:
-                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw << inst.shamt();
-                    break;
-                case FN3_SR:
-                    //SRLI
+        switch (inst.funct3()) {
+            //ADDI
+            case FN3_ADD_SUB:
+                PAY.buf[index].C_value.sdw = PAY.buf[index].A_value.sdw + inst.i_imm();
+                //// Check if this is NOP with a fetch exception.
+                //// If so, throw the appropriate exception
+                //if(PAY.buf[index].fetch_exception){
+                //  if(PAY.buf[index].fetch_exception_cause == CAUSE_MISALIGNED_FETCH){
+                //    throw new trap_instruction_address_misaligned(PAY.buf[index].pc);
+                //  } else if(PAY.buf[index].fetch_exception_cause == CAUSE_FAULT_FETCH){
+                //    throw new trap_instruction_access_fault(PAY.buf[index].pc);
+                //  }
+                //}
+                break;
+                //SLTI
+            case FN3_SLT:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.sdw < sreg_t(inst.i_imm()) ? reg_t(1) : reg_t(0);
+                break;
+                //SLTIU
+            case FN3_SLTU:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw < reg_t(inst.i_imm()) ? reg_t(1) : reg_t(0);
+                break;
+                //XORI
+            case FN3_XOR:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw ^ inst.i_imm();
+                break;
+                //ORI
+            case FN3_OR:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw | inst.i_imm();
+                break;
+                //ANDI
+            case FN3_AND:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw & inst.i_imm();
+                break;
+                //SLLI
+            case FN3_SLL:
+                PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw << inst.shamt();
+                break;
+            case FN3_SR:
+                //SRLI
+                //LSB masked to be 1'b0 as it is part of shamt in 64bit encoding
+                // Logical right shift, hence using unsigned operands
+                if ((inst.funct7() & 0x7e) == FN7_SRL) {
+                    PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw >> inst.shamt();
+                }
+                    //SRAI
                     //LSB masked to be 1'b0 as it is part of shamt in 64bit encoding
-                    // Logical right shift, hence using unsigned operands
-                    if ((inst.funct7() & 0x7e) == FN7_SRL) {
-                        PAY.buf[index].C_value.dw = PAY.buf[index].A_value.dw >> inst.shamt();
-                    }
-                        //SRAI
-                        //LSB masked to be 1'b0 as it is part of shamt in 64bit encoding
-                        // Arithmatic right shift, hence using signed operands
-                    else if ((inst.funct7() & 0x7e) == FN7_SRA) {
-                        PAY.buf[index].C_value.sdw = PAY.buf[index].A_value.sdw >> inst.shamt();
-                    }
-                        //Undefined instruction
-                    else {
-                        assert(0); //Undefined instruction
-                    }
-                    break;
+                    // Arithmatic right shift, hence using signed operands
+                else if ((inst.funct7() & 0x7e) == FN7_SRA) {
+                    PAY.buf[index].C_value.sdw = PAY.buf[index].A_value.sdw >> inst.shamt();
+                }
+                    //Undefined instruction
+                else {
+                    assert(0); //Undefined instruction
+                }
+                break;
 
-            }
         }
       break; //OP_OP_IMM
     case OP_OP_IMM_32:
@@ -376,97 +368,105 @@ void pipeline_t::alu(unsigned int index) {
 
     //TODO: Add correct functionality
     case OP_OP_32:
-      if(inst.funct7() == FN7_MULDIV){
-        switch(inst.funct3()){
-          //MULW
- 	  	    case FN3_MUL:
-    	    	PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.dw * PAY.buf[index].B_value.dw);
-    	    	break;
-          //DIVW
-    	    case FN3_DIV:
-            {
-              sreg_t lhs = sext32(PAY.buf[index].A_value.sdw);
-              sreg_t rhs = sext32(PAY.buf[index].B_value.sdw); 
-              if(rhs == 0)
-                PAY.buf[index].C_value.dw = UINT64_MAX;
-              else
-                PAY.buf[index].C_value.sdw = sext32(lhs / rhs);
-            }
-    	    	break;
-          //DIVUW
-    	    case FN3_DIVU:
-            {
-              //zext32() truncates the operand to 32 bits and then 0 extends to 64 bit as per ISA requirement
-              reg_t lhs = zext32(PAY.buf[index].A_value.dw);
-              reg_t rhs = zext32(PAY.buf[index].B_value.dw); 
-              if(rhs == 0)
-                PAY.buf[index].C_value.dw = UINT64_MAX;
-              else
-                PAY.buf[index].C_value.sdw = sext32(lhs / rhs);
-            }
-    	    	break;
-          //REMW
-    	    case FN3_REM:
-            {
-              sreg_t lhs = sext32(PAY.buf[index].A_value.sdw);
-              sreg_t rhs = sext32(PAY.buf[index].B_value.sdw); 
-              if(rhs == 0)
-                PAY.buf[index].C_value.sdw = lhs;
-              else
-                PAY.buf[index].C_value.sdw = sext32(lhs % rhs);
-            }
-            break;
-          //REMUW
-    	    case FN3_REMU:
-            {
-              reg_t lhs = zext32(PAY.buf[index].A_value.dw);
-              reg_t rhs = zext32(PAY.buf[index].B_value.dw); 
-              if(rhs == 0)
-                PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.sdw);
-              else
-                PAY.buf[index].C_value.sdw = sext32(lhs % rhs);
-            }
-    	    	break;
-        }//switch(inst.funct3())
-      }
-      else {
-        switch(inst.funct3()){
-    	  	case FN3_ADD_SUB:
-            //ADDW
-            if(inst.funct7() == FN7_ADD){  
-    	  		  PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.sdw + PAY.buf[index].B_value.sdw) ;
-            } 
-            //SUBW
-            else if(inst.funct7() == FN7_SUB){
-    	  		  PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.sdw - PAY.buf[index].B_value.sdw) ;
-            }
-            //Undefined instruction
-            else{
-              assert(0); 
-            }
-    	  		break;
-          //SLLW
-    	  	case FN3_SLL:
-    	  		PAY.buf[index].C_value.dw = sext32(PAY.buf[index].A_value.w[0] << (PAY.buf[index].B_value.dw & 0x1f)) ;
-    	  		break;
-          case FN3_SR:
-            //SRLW
-            // Logical right shift, hence using unsigned operands
-            if(inst.funct7() == FN7_SRL){  
-    	  		  PAY.buf[index].C_value.dw = sext32(PAY.buf[index].A_value.w[0] >> (PAY.buf[index].B_value.dw & 0x1f));
-            } 
-            //SRAW
-            // Arithmetic right shift, hence using signed operands
-            else if(inst.funct7() == FN7_SRA){
-    	  		  PAY.buf[index].C_value.sdw = sext32((int32_t)PAY.buf[index].A_value.w[0] >> (PAY.buf[index].B_value.dw & 0x1f));
-            }
-            //Undefined instruction
-            else{
-              assert(0); 
-            }
-          break;
+        //DHP FIX
+        // alu operation for hammock branch with destination reg
+        //if source reg is zero then set destination reg to 1 for taken, otherwise set to zero for not taken.
+        if(PAY.buf[index].mux){
+            (!PAY.buf[index].A_value.dw)?PAY.buf[index].C_value.dw=1:PAY.buf[index].C_value.dw=0;
         }
-      }
+        else {
+            if (inst.funct7() == FN7_MULDIV) {
+                switch (inst.funct3()) {
+                    //MULW
+                    case FN3_MUL:
+                        PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.dw * PAY.buf[index].B_value.dw);
+                        break;
+                        //DIVW
+                    case FN3_DIV: {
+                        sreg_t lhs = sext32(PAY.buf[index].A_value.sdw);
+                        sreg_t rhs = sext32(PAY.buf[index].B_value.sdw);
+                        if (rhs == 0)
+                            PAY.buf[index].C_value.dw = UINT64_MAX;
+                        else
+                            PAY.buf[index].C_value.sdw = sext32(lhs / rhs);
+                    }
+                        break;
+                        //DIVUW
+                    case FN3_DIVU: {
+                        //zext32() truncates the operand to 32 bits and then 0 extends to 64 bit as per ISA requirement
+                        reg_t lhs = zext32(PAY.buf[index].A_value.dw);
+                        reg_t rhs = zext32(PAY.buf[index].B_value.dw);
+                        if (rhs == 0)
+                            PAY.buf[index].C_value.dw = UINT64_MAX;
+                        else
+                            PAY.buf[index].C_value.sdw = sext32(lhs / rhs);
+                    }
+                        break;
+                        //REMW
+                    case FN3_REM: {
+                        sreg_t lhs = sext32(PAY.buf[index].A_value.sdw);
+                        sreg_t rhs = sext32(PAY.buf[index].B_value.sdw);
+                        if (rhs == 0)
+                            PAY.buf[index].C_value.sdw = lhs;
+                        else
+                            PAY.buf[index].C_value.sdw = sext32(lhs % rhs);
+                    }
+                        break;
+                        //REMUW
+                    case FN3_REMU: {
+                        reg_t lhs = zext32(PAY.buf[index].A_value.dw);
+                        reg_t rhs = zext32(PAY.buf[index].B_value.dw);
+                        if (rhs == 0)
+                            PAY.buf[index].C_value.sdw = sext32(PAY.buf[index].A_value.sdw);
+                        else
+                            PAY.buf[index].C_value.sdw = sext32(lhs % rhs);
+                    }
+                        break;
+                }//switch(inst.funct3())
+            } else {
+                switch (inst.funct3()) {
+                    case FN3_ADD_SUB:
+                        //ADDW
+                        if (inst.funct7() == FN7_ADD) {
+                            PAY.buf[index].C_value.sdw = sext32(
+                                    PAY.buf[index].A_value.sdw + PAY.buf[index].B_value.sdw);
+                        }
+                            //SUBW
+                        else if (inst.funct7() == FN7_SUB) {
+                            PAY.buf[index].C_value.sdw = sext32(
+                                    PAY.buf[index].A_value.sdw - PAY.buf[index].B_value.sdw);
+                        }
+                            //Undefined instruction
+                        else {
+                            assert(0);
+                        }
+                        break;
+                        //SLLW
+                    case FN3_SLL:
+                        PAY.buf[index].C_value.dw = sext32(
+                                PAY.buf[index].A_value.w[0] << (PAY.buf[index].B_value.dw & 0x1f));
+                        break;
+                    case FN3_SR:
+                        //SRLW
+                        // Logical right shift, hence using unsigned operands
+                        if (inst.funct7() == FN7_SRL) {
+                            PAY.buf[index].C_value.dw = sext32(
+                                    PAY.buf[index].A_value.w[0] >> (PAY.buf[index].B_value.dw & 0x1f));
+                        }
+                            //SRAW
+                            // Arithmetic right shift, hence using signed operands
+                        else if (inst.funct7() == FN7_SRA) {
+                            PAY.buf[index].C_value.sdw = sext32(
+                                    (int32_t) PAY.buf[index].A_value.w[0] >> (PAY.buf[index].B_value.dw & 0x1f));
+                        }
+                            //Undefined instruction
+                        else {
+                            assert(0);
+                        }
+                        break;
+                }
+            }
+        }
       break;//OP_OP_32
 //
 // miscellaneous

@@ -47,7 +47,10 @@ alu.cc <br />
 riscv-base decode.h <br />
 -provide set functions to inject instructions in Fetch State Machine <br />
 
-RENAME STAGE 
+RENAME STAGE <br />
+
+pipeline.cc
+-added 1 log reg to renamer
 
 payload.h <br />
 -Record in fetch1 if instruction is valid predicate instr or not <br />
@@ -55,12 +58,12 @@ payload.h <br />
 payload.cc <br />
 -depending on case in transfer_fetch_bundle, set bool for valid predicate or correct_region <br />
 
-retire.cc
+retire.cc <br />
 -if a valid predicate at head of Active list and not in correct region, then dont commit to AMT just push tail of free list <br />
 -otherwise do normal action <br />
 
 renamer.h <br />
 renamer.cc <br />
 -using flag argument in commit function to commit differently for predicate false region. <br />
--change commit function based on correct being true or not
+-change commit function based on correct being true or not <br />
 
