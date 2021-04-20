@@ -179,6 +179,7 @@ void fetchunit_t::transfer_fetch_bundle() {
           PAY->buf[index].inst.set_opcode(0x3b);
           //mux is true to execute this branch differently in decode and alu.
           PAY->buf[index].mux=true;
+          PAY->map_to_actual(proc, index, false);
           //should be IDLE state when this happens
           assert(state_machine==IDLE);
           db_t *actual;
@@ -191,7 +192,6 @@ void fetchunit_t::transfer_fetch_bundle() {
           if(state_machine==NOT_TAKEN){
               instr_counter=ideal_table->instr_total-ideal_table->instr_else;
           }
-          PAY->map_to_actual(proc, index, false);
       }
       else {
 /*       ideal_table->branch_PC=0x1a5b0;
