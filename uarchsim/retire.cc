@@ -99,7 +99,7 @@ void pipeline_t::retire(size_t& instret) {
          // FIX_ME #17b
 	 // Commit the instruction at the head of the active list.
 	    REN->commit();
-	 }
+
          // If the committed instruction is a branch, signal the branch predictor to commit its oldest branch.
          if (branch) {
 	    // TODO (ER): Change the branch predictor interface as follows: FetchUnit->commit().

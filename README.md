@@ -26,7 +26,6 @@ fetchunit.h <br />
 -declare instr counter for instructions in each state <br />
 -declare hammock info struct ideal table <br />
 
-
 fetchunit.cc <br />
 -initialize state_machine as IDLE <br />
 -define hammock ideal table struct <br />

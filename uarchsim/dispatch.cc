@@ -150,8 +150,8 @@ void pipeline_t::dispatch() {
               amo_flag,
               csr_flag,
               PAY.buf[index].pc,
-              PAY->buf[index].DHP,
-              PAY->buf[index].DHP_id);
+              PAY.buf[index].DHP,
+              PAY.buf[index].DHP_id);
     //DHP fix
     //2 new arguments, pass in bool DHP and uint64_t DHP id
     //augment active list in renamer to have these two fields as well.

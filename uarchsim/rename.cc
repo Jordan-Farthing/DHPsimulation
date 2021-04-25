@@ -119,7 +119,7 @@ void pipeline_t::rename2() {
       //DHP FIX
       //use rename_rsrc to ask what pREG of r64 is and give it to the payload buffer
       if(PAY.buf[index].DHP) {
-          PAY->buf[index].DHP_id=(unsigned int)REN->rename_rsrc(64);
+          PAY.buf[index].DHP_id=REN->rename_rsrc(64);
       }
 
       // FIX_ME #3
