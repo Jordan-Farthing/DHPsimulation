@@ -152,6 +152,15 @@ void pipeline_t::writeback(unsigned int lane_number) {
       // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
       // 2. Set the completed bit for this instruction in the Active List.
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //DHP FIX
+      //if instruction that executed is branch predicate, and its destination value is true;
+      //call deactivate with its destination tag to deactivate instructions in active list that depend on this tag and
+      //are a valid DHP instruction
+      if(PAY.buf[index].pc==0x1a5b0){
+          if(PAY.buf[index].C_value.dw==1){
+              REN->deactivate(PAY.buf[index].C_phys_reg);
+          }
+      }
       REN->set_complete(PAY.buf[index].AL_index);
 
 

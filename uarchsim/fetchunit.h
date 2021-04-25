@@ -157,8 +157,8 @@ public:
         uint64_t log2;
         uint64_t log3;
         uint64_t log4;
-    }hammock;
-    struct hammock* ideal_table;
+    };
+    hammock* ideal_table;
 
 	fetchunit_t(uint64_t instr_per_cycle,				// "n"
 	            uint64_t cond_branch_per_cycle,			// "m"

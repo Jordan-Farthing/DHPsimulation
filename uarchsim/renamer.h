@@ -74,6 +74,11 @@ private:
     // 13. csr flag (whether or not instr. is a system instruction)
     // ----- Other fields.
     // 14. program counter of the instruction
+    //DHP FIX
+    //adding two fields
+    // 15. DHP (1 or 0)
+    // 16. DHP_id (predicate tag that guards instruction
+    // 17. deactivated (1 or 0)
 
     // Notes:
     // * Structure includes head, tail, and possibly other variables
@@ -333,7 +338,11 @@ public:
                            bool branch,
                            bool amo,
                            bool csr,
-                           uint64_t PC);
+                           uint64_t PC,
+                           bool DHP,
+                           uint64_t DHP_id);
+    //DHP fix
+    //add 2 new arguments DHP, DHP_id
 
 
     //////////////////////////////////////////
@@ -485,7 +494,7 @@ public:
     /////////////////////////////////////////////////////////////////////
     //DHP FIX
     //using flag for predicate
-    void commit(bool correct);
+    void commit();
 
     //////////////////////////////////////////////////////////////////////
     // Squash the renamer class.
@@ -517,4 +526,8 @@ public:
     // Query the exception bit of the indicated entry in the Active List.
     /////////////////////////////////////////////////////////////////////
     bool get_exception(uint64_t AL_index);
+
+    //DHP FIX
+    void deactivate(uint64_t DHP_id);
+
 };

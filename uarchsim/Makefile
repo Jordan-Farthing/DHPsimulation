@@ -2,8 +2,8 @@ CC = g++
 RVBASE = ../riscv-base
 INC = -I. -I$(RVBASE) -I$(RVBASE)/softfloat -I$(RVBASE)/spike_main
 LIB = -L$(RVBASE)
-OPT = -O3
-#OPT = -g
+#OPT = -O3
+OPT = -g
 FLAGS = -std=c++11 -DPREFIX=\".\" -DRISCV_MICRO_CHECKER $(INC) $(LIB) $(OPT)
 
 OBJ = $(patsubst %.cc,%.o,$(wildcard ./*.cc))

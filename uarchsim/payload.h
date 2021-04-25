@@ -38,6 +38,14 @@ typedef struct {
    bool valid_predicate;
    bool correct_region;
    //DHP FIX
+   //for carrying info if its in control dependant region of DHP and the pREG ID the instruction depends on
+   //in the PRF
+   //bad instruction or good (deactivated)
+   bool DHP;
+   uint64_t DHP_id;
+
+
+   //DHP FIX
    bool mux;
 
    insn_t inst;                 // The RISCV instruction.

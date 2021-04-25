@@ -98,14 +98,7 @@ void pipeline_t::retire(size_t& instret) {
 	 //
          // FIX_ME #17b
 	 // Commit the instruction at the head of the active list.
-	 // REN->commit();
-	 // DHP FIX
-	 // if instruction to commit at PAY head is a predicate, and not in the correct region
-	 // then do not commit to the AMT, just increment tail point of Free List and head of Active List
-	 if(PAY.buf[PAY.head].valid_predicate && !PAY.buf[PAY.head].correct region)
-	     REN->commit(false);
-	 else{
-	    REN->commit(true);
+	    REN->commit();
 	 }
          // If the committed instruction is a branch, signal the branch predictor to commit its oldest branch.
          if (branch) {

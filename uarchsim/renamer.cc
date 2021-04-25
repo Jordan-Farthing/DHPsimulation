@@ -25,7 +25,7 @@ renamer::renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches)
     Free_List.tail=0;
     Active_List.table = new uint64_t*[(n_phys_regs-n_log_regs)];
     for(uint64_t i = 0; i < (n_phys_regs-n_log_regs); i++){
-        Active_List.table[i]=new uint64_t[16];
+        Active_List.table[i]=new uint64_t[19];
     }
     Active_List.size=n_phys_regs-n_log_regs;
     Active_List.full=0;
@@ -150,6 +150,8 @@ bool renamer::stall_dispatch(uint64_t bundle_inst){
     return false;
 }
 
+//DHP FIX
+//add 2 new arguments DHP, DHP_id
 uint64_t renamer::dispatch_inst(bool dest_valid,
                                 uint64_t log_reg,
                                 uint64_t phys_reg,
@@ -158,7 +160,9 @@ uint64_t renamer::dispatch_inst(bool dest_valid,
                                 bool branch,
                                 bool amo,
                                 bool csr,
-                                uint64_t PC){
+                                uint64_t PC,
+                                bool DHP,
+                                uint64_t DHP_id){
     assert(Active_List.full==0);
     if (dest_valid){
         Active_List.table[Active_List.tail][1]=1;
@@ -203,7 +207,20 @@ uint64_t renamer::dispatch_inst(bool dest_valid,
     else{
         Active_List.table[Active_List.tail][13]=0;
     }
+    //DHP FIX
+    //set fields in active list for DHP, DHP_id
+    if (DHP){
+        Active_List.table[Active_List.tail][15]=1;
+    }
+    else{
+        Active_List.table[Active_List.tail][15]=0;
+    }
+    Active_List.table[Active_List.tail][16]=DHP_id;
+    //DHP FIX
+    //set deactivated to false or 0 in dispatch
+    Active_List.table[Active_List.tail][17]=0;
     Active_List.table[Active_List.tail][14]=PC;
+
 
     uint64_t return_tail=Active_List.tail;
     Active_List.tail=(Active_List.tail+1)%Active_List.size;
@@ -300,14 +317,17 @@ bool renamer::precommit(bool &completed,
         return true;
     }
 }
+
 //DHP FIX
 //using flag for predicate commit
-void renamer::commit(bool correct){
+void renamer::commit(){
     assert(!((Active_List.head==Active_List.tail)&&(Active_List.full==0)));
     assert(Active_List.table[Active_List.head][4]==1);
     assert(Active_List.table[Active_List.head][5]==0);
     assert(Active_List.table[Active_List.head][6]==0);
-    if (correct) {
+    //DHP FIX
+    //if head is not a DHP instr and deactivated, then commit normally.
+    if (!(Active_List.table[Active_List.head][15] && Active_List.table[Active_List.head][17])) {
         if (Active_List.table[Active_List.head][1]) {
             //need to copy AMT pReg to Free List Tail since we have dest register pReg to replace it in AMT.
             //assert free list is not full
@@ -322,13 +342,17 @@ void renamer::commit(bool correct){
         }
         Active_List.full = 0;
     }
-    //DHP FIX use this case when it is not correct region in predicate
     else{
-        //assert free list is not full
-        Free_List.tail = (Free_List.tail + 1) % Free_List.size;
-        Free_List.empty = 0;
-        //only thing different is to add dst reg to AMT
-        Active_List.head = (Active_List.head + 1) % Active_List.size;
+        if (Active_List.table[Active_List.head][1]) {
+            //assert free list is not full
+            Free_List.tail = (Free_List.tail + 1) % Free_List.size;
+            Free_List.empty = 0;
+            //only thing different is to add dst reg to AMT
+            Active_List.head = (Active_List.head + 1) % Active_List.size;
+        }
+        else{
+            Active_List.head = (Active_List.head + 1) % Active_List.size;
+        }
         Active_List.full = 0;
     }
 }
@@ -370,5 +394,21 @@ void renamer::Shadow_Copy(uint64_t index){
     while (i<log_regs){
         Checkpoints[index].Shadow_Map_Table[i]=RMT[i];
         i++;
+    }
+}
+
+//DHP FIX
+//PC that is deactivated when taken is 1a5b4
+//else all instructions are activated
+void renamer::deactivate(uint64_t DHP_id){
+    uint64_t fake_head=Active_List.head;
+    while(fake_head!=Active_List.tail) {
+        if(Active_List.table[fake_head][15]==1)
+            if(Active_List.table[fake_head][16]==DHP_id)
+                if(Active_List.table[fake_head][14]==0x1a5b4){
+                    Active_List.table[fake_head][17]=1;
+                    return;
+                }
+        fake_head = (fake_head + 1) % Active_List.size;
     }
 }

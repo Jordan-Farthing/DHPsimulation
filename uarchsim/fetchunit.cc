@@ -85,11 +85,12 @@ fetchunit_t::fetchunit_t(uint64_t instr_per_cycle,			// "n"
 
    meas_btbmiss = 0;	// # of btb misses, i.e., number of discarded fetch bundles (idle fetch cycles) due to a btb miss within the bundle
    //DHP FIX
-   //Initialize state_machine control variable to 0
+   //Initialize state_machine control variable to IDLE
    state_machine=IDLE;
     //DHP FIX
     //define each branch hammock for use here, hardwire information
-    //information location is declared in the pipeline.h
+    //information location is declared in the fetchunit.h
+    ideal_table= new hammock;
     ideal_table->branch_PC=0x1a5b0;
     ideal_table->instr_then=1;
     ideal_table->instr_else=0;
@@ -150,12 +151,19 @@ void fetchunit_t::transfer_fetch_bundle() {
       PAY->buf[index].fetch_exception_cause = fetch_bundle[pos].exception_cause;
 
       //DHP FIX
+      //set bool DHP to false initially, set to true only when not in IDLE or CMOV
+      PAY->buf[index].DHP=false;
+      if (state_machine!=IDLE && state_machine!=CMOVE){
+          PAY->buf[index].DHP=true;
+      }
+
+      //DHP FIX
       //every instruction by default is not a mux
       PAY->buf[index].mux=false;
 
       //DHP FIX
       //set payload buf for rename stage if instr is in predicate or not
-      (state_machine==IDLE)?(PAY->buf[index].valid_predicate=false):(PAY->buf[index].valid_predicate=true);
+      //(state_machine==IDLE)?(PAY->buf[index].valid_predicate=false):(PAY->buf[index].valid_predicate=true);
 
       //////////////////////////////////////////////////////
       // map_to_actual()
@@ -177,6 +185,7 @@ void fetchunit_t::transfer_fetch_bundle() {
           PAY->buf[index].inst.set_rd(64);
           //insert OP_OP_32 opcode (0x3b)
           PAY->buf[index].inst.set_opcode(0x3b);
+          PAY->buf[index].branch=false;
           //mux is true to execute this branch differently in decode and alu.
           PAY->buf[index].mux=true;
           PAY->map_to_actual(proc, index, false);
@@ -184,13 +193,15 @@ void fetchunit_t::transfer_fetch_bundle() {
           assert(state_machine==IDLE);
           db_t *actual;
           //unsure if this is correct db_index
-          actual = proc->get_pipe()->peek(PAY->buf[index].db_index);
-          (actual->a_next_pc != INCREMENT_PC(actual->a_pc)?state_machine=TAKEN:state_machine=NOT_TAKEN;
-          if(state_machine==TAKEN){
-              instr_counter=(ideal_table->instr_total)-(ideal_table->instr_then)-(ideal_table->instr_else);
-          }
-          if(state_machine==NOT_TAKEN){
-              instr_counter=ideal_table->instr_total-ideal_table->instr_else;
+          if (PAY->buf[index].db_index!=DEBUG_INDEX_INVALID) {
+              actual = proc->get_pipe()->peek(PAY->buf[index].db_index);
+              (actual->a_next_pc != INCREMENT_PC(actual->a_pc)) ? state_machine = TAKEN : state_machine = NOT_TAKEN;
+              if (state_machine == TAKEN) {
+                  instr_counter = (ideal_table->instr_total) - (ideal_table->instr_then) - (ideal_table->instr_else);
+              }
+              if (state_machine == NOT_TAKEN) {
+                  instr_counter = ideal_table->instr_total - ideal_table->instr_else;
+              }
           }
       }
       else {
@@ -207,7 +218,7 @@ void fetchunit_t::transfer_fetch_bundle() {
               case TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, true);
-                  PAY->buf[index].correct_region = false;
+                  //PAY->buf[index].correct_region = false;
                   if (instr_counter == 0) {
                       state_machine = FINISH_TAKEN;
                       instr_counter = ideal_table->instr_then;
@@ -216,7 +227,7 @@ void fetchunit_t::transfer_fetch_bundle() {
               case FINISH_TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, false);
-                  PAY->buf[index].correct_region = true;
+                  //PAY->buf[index].correct_region = true;
                   if (instr_counter == 0) {
                       if (!ideal_table->instr_else) {
                           state_machine = CMOVE;
@@ -229,7 +240,7 @@ void fetchunit_t::transfer_fetch_bundle() {
               case NOT_TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, false);
-                  PAY->buf[index].correct_region = true;
+                  //PAY->buf[index].correct_region = true;
                   if (instr_counter == 0) {
                       if (!ideal_table->instr_else)
                           state_machine = CMOVE;
@@ -242,7 +253,7 @@ void fetchunit_t::transfer_fetch_bundle() {
               case FINISH_NOT_TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, false);
-                  PAY->buf[index].correct_region = true;
+                  //PAY->buf[index].correct_region = true;
                   if (instr_counter == 0) {
                       state_machine = CMOVE;
                   }
@@ -250,13 +261,14 @@ void fetchunit_t::transfer_fetch_bundle() {
               case FINISH_TAKEN_ELSE:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, true);
-                  PAY->buf[index].correct_region = false;
+                  //PAY->buf[index].correct_region = false;
                   if (instr_counter == 0) {
                       state_machine = CMOVE;
                   }
                   break;
               case CMOVE:
                   state_machine = IDLE;
+                  PAY->buf[index].correct_region = true;
                   PAY->buf[index].mux=true;
                   PAY->buf[index].inst.clear();
                   PAY->buf[index].inst.set_rs1(5);
@@ -264,7 +276,7 @@ void fetchunit_t::transfer_fetch_bundle() {
                   PAY->buf[index].inst.set_rs3(64);
                   PAY->buf[index].inst.set_rd(1);
                   //encoding value of OP OP IMM 32
-                  PAY->buf[index].inst.set_opcode(0x1b)
+                  PAY->buf[index].inst.set_opcode(0x1b);
                   // if pos is = instr_cycle - 1, then  change pc of next bundle to reconv PC
                   PAY->map_to_actual(proc, index, true);
                   pc=ideal_table->reconv_PC;

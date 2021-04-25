@@ -116,6 +116,12 @@ void pipeline_t::rename2() {
 
       index = RENAME2[i].index;
 
+      //DHP FIX
+      //use rename_rsrc to ask what pREG of r64 is and give it to the payload buffer
+      if(PAY.buf[index].DHP) {
+          PAY->buf[index].DHP_id=(unsigned int)REN->rename_rsrc(64);
+      }
+
       // FIX_ME #3
       // Rename source registers (first) and destination register (second).
       //
