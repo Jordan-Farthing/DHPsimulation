@@ -320,7 +320,7 @@ bool renamer::precommit(bool &completed,
 
 //DHP FIX
 //using flag for predicate commit
-void renamer::commit(){
+bool renamer::commit(){
     assert(!((Active_List.head==Active_List.tail)&&(Active_List.full==0)));
     assert(Active_List.table[Active_List.head][4]==1);
     assert(Active_List.table[Active_List.head][5]==0);
@@ -341,6 +341,7 @@ void renamer::commit(){
             Active_List.head = (Active_List.head + 1) % Active_List.size;
         }
         Active_List.full = 0;
+        return false;
     }
     else{
         if (Active_List.table[Active_List.head][1]) {
@@ -354,6 +355,7 @@ void renamer::commit(){
             Active_List.head = (Active_List.head + 1) % Active_List.size;
         }
         Active_List.full = 0;
+        return true;
     }
 }
 

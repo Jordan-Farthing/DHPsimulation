@@ -92,10 +92,10 @@ fetchunit_t::fetchunit_t(uint64_t instr_per_cycle,			// "n"
     //information location is declared in the fetchunit.h
     ideal_table= new hammock;
     ideal_table->branch_PC=0x1a5b0;
-    ideal_table->instr_then=1;
+    ideal_table->instr_then=0;
     ideal_table->instr_else=0;
-    ideal_table->instr_total=2;
-    ideal_table->reconv_PC=0x1a5bc;
+    ideal_table->instr_total=1;
+    ideal_table->reconv_PC=0x1a5b8;
     ideal_table->log1=1;
 }
 
@@ -220,11 +220,18 @@ void fetchunit_t::transfer_fetch_bundle() {
                   PAY->map_to_actual(proc, index, true);
                   //PAY->buf[index].correct_region = false;
                   if (instr_counter == 0) {
-                      state_machine = FINISH_TAKEN;
-                      instr_counter = ideal_table->instr_then;
+                      state_machine = CMOVE;
                   }
                   break;
-              case FINISH_TAKEN:
+              case NOT_TAKEN:
+                  instr_counter--;
+                  PAY->map_to_actual(proc, index, false);
+                  //PAY->buf[index].correct_region = true;
+                  if (instr_counter == 0) {
+                      state_machine = CMOVE;
+                  }
+                  break;
+/*              case FINISH_TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, false);
                   //PAY->buf[index].correct_region = true;
@@ -236,21 +243,8 @@ void fetchunit_t::transfer_fetch_bundle() {
                           state_machine = FINISH_TAKEN_ELSE;
                       }
                   }
-                  break;
-              case NOT_TAKEN:
-                  instr_counter--;
-                  PAY->map_to_actual(proc, index, false);
-                  //PAY->buf[index].correct_region = true;
-                  if (instr_counter == 0) {
-                      if (!ideal_table->instr_else)
-                          state_machine = CMOVE;
-                      else {
-                          instr_counter = ideal_table->instr_else;
-                          state_machine = FINISH_NOT_TAKEN;
-                      }
-                  }
-                  break;
-              case FINISH_NOT_TAKEN:
+                  break;*/
+/*              case FINISH_NOT_TAKEN:
                   instr_counter--;
                   PAY->map_to_actual(proc, index, false);
                   //PAY->buf[index].correct_region = true;
@@ -265,10 +259,10 @@ void fetchunit_t::transfer_fetch_bundle() {
                   if (instr_counter == 0) {
                       state_machine = CMOVE;
                   }
-                  break;
+                  break;*/
               case CMOVE:
                   state_machine = IDLE;
-                  PAY->buf[index].correct_region = true;
+                  //PAY->buf[index].correct_region = true;
                   PAY->buf[index].mux=true;
                   PAY->buf[index].inst.clear();
                   PAY->buf[index].inst.set_rs1(5);
