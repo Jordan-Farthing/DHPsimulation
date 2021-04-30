@@ -114,14 +114,21 @@ void pipeline_t::retire(size_t& instret) {
             get_state()->fflags = actual->a_state->fflags;
          }
 
+     // DHP FIX
 	 // Check results.
-	 if(!activated_instr && PAY.buf[PAY.head].pc!=0x1a5b0) {
-        checker();
+	 if(activated_instr && !PAY.buf[PAY.head].mux) {
+       checker();
+	 instret++;
      }
-
+	 //DHP FIX
+	else{
+	if(PAY.buf[PAY.head].pc==0x1a5b0){
+	 pipe->force_pop();
+	 instret++;
+	}
+}
 	 // Keep track of the number of retired instructions.
 	 num_insn++;
-         instret++;
 	 inc_counter(commit_count);
 	 if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
             num_insn_split++;

@@ -253,10 +253,10 @@ void pipeline_t::decode() {
                 //DHP FIX for branch PC
                 if(PAY.buf[index].mux){
                     //will include a source reg and dest reg
-                    PAY.buf[index].A_valid;
+                    PAY.buf[index].A_valid = true;
                     PAY.buf[index].A_log_reg = inst.rs1();
                     PAY.buf[index].C_valid = true;
-                    PAY.buf[index].C_log_reg = inst.rd();
+                    PAY.buf[index].C_log_reg = 64;
                 }
                 else {
                     // first source register
@@ -286,7 +286,7 @@ void pipeline_t::decode() {
                 PAY.buf[index].C_valid = true;
                 PAY.buf[index].C_log_reg = inst.rd();
                 PAY.buf[index].D_valid = true;
-                PAY.buf[index].D_log_reg = inst.rs3();
+                PAY.buf[index].D_log_reg = 64;
 			}
 			else {
                 if (inst.bits() == INSN_NOP) {

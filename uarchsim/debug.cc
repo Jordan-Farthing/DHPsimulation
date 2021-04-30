@@ -277,6 +277,12 @@ void debug_buffer_t::push_state_actual(state_t* a_state_ptr,bool checkpoint_stat
 // Assert that the index of the head debug buffer entry equals 'i'.
 // Then pop the head entry, returning a pointer to the contents of
 // that entry.
+void debug_buffer_t::force_pop(){
+   length -= 1;
+
+   // Pop the head entry by advancing head pointer.
+   head = MOD((head + 1), DEBUG_SIZE);
+}
 db_t* debug_buffer_t::pop(debug_index_t i) {
 
    ifprintf(logging_on,stderr, "Timing simulator popping entry %u\n",i);

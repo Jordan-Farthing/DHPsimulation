@@ -185,7 +185,8 @@ public:
 	inline	bool empty() {
 	   return(length == 0);
 	}
-
+//DHP
+void force_pop();
   db_t* pop(debug_index_t i);
 
 	//////////////////////////////////////////////////////////////

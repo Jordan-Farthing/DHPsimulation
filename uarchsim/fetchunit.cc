@@ -181,7 +181,8 @@ void fetchunit_t::transfer_fetch_bundle() {
           //need to set the destination register for branch for CMOV to depend on.
           //the destination register is gonna be an reg 31
           PAY->buf[index].inst.clear();
-          PAY->buf[index].inst.set_rs1(4);
+          //a4 is 14
+          PAY->buf[index].inst.set_rs1(14);
           PAY->buf[index].inst.set_rd(64);
           //insert OP_OP_32 opcode (0x3b)
           PAY->buf[index].inst.set_opcode(0x3b);
@@ -261,19 +262,20 @@ void fetchunit_t::transfer_fetch_bundle() {
                   }
                   break;*/
               case CMOVE:
-                  state_machine = IDLE;
                   //PAY->buf[index].correct_region = true;
                   PAY->buf[index].mux=true;
                   PAY->buf[index].inst.clear();
-                  PAY->buf[index].inst.set_rs1(5);
-                  PAY->buf[index].inst.set_rs2(3);
+                  //a5 is 15
+                  PAY->buf[index].inst.set_rs1(15);
+                  //a3 is 13
+                  PAY->buf[index].inst.set_rs2(13);
                   PAY->buf[index].inst.set_rs3(64);
-                  PAY->buf[index].inst.set_rd(1);
+                  //a1 is 11
+                  PAY->buf[index].inst.set_rd(11);                  
                   //encoding value of OP OP IMM 32
                   PAY->buf[index].inst.set_opcode(0x1b);
                   // if pos is = instr_cycle - 1, then  change pc of next bundle to reconv PC
                   PAY->map_to_actual(proc, index, true);
-                  pc=ideal_table->reconv_PC;
                   FETCH2[pos].valid = true;
                   FETCH2[pos].index = index;
                   return;
@@ -417,6 +419,14 @@ void fetchunit_t::fetch1(cycle_t cycle) {
       // Speculatively update the pc, BHRs, and RAS.
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////
       spec_update(&update, cb_predictions);
+
+      //DHP FIX
+      if(state_machine==CMOVE){
+          state_machine = IDLE;
+          pc=ideal_table->reconv_PC;
+      }
+
+
    }
 }
 

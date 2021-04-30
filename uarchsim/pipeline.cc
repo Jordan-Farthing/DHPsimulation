@@ -200,7 +200,7 @@ pipeline_t::pipeline_t(
   ////////////////////////////////////////////////////////////
   //DHP FIX
   //added 1 log reg for r64 predicate
-  REN = new renamer(NXPR+NFPR+1, (NXPR + NFPR + rob_size), num_chkpts);
+  REN = new renamer(NXPR+NFPR+1, (NXPR + NFPR + 1 + rob_size), num_chkpts);
 
   /////////////////////////////////////////////////////////////
   // Pipeline register between the Rename and Dispatch Stages.

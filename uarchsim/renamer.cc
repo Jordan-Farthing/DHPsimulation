@@ -341,7 +341,7 @@ bool renamer::commit(){
             Active_List.head = (Active_List.head + 1) % Active_List.size;
         }
         Active_List.full = 0;
-        return false;
+        return true;
     }
     else{
         if (Active_List.table[Active_List.head][1]) {
@@ -355,7 +355,7 @@ bool renamer::commit(){
             Active_List.head = (Active_List.head + 1) % Active_List.size;
         }
         Active_List.full = 0;
-        return true;
+        return false;
     }
 }
 
@@ -406,8 +406,7 @@ void renamer::deactivate(uint64_t DHP_id){
     uint64_t fake_head=Active_List.head;
     while(fake_head!=Active_List.tail) {
         if(Active_List.table[fake_head][15]==1)
-            if(Active_List.table[fake_head][16]==DHP_id)
-                if(Active_List.table[fake_head][14]==0x1a5b4){
+            if(Active_List.table[fake_head][16]==DHP_id){
                     Active_List.table[fake_head][17]=1;
                     return;
                 }
