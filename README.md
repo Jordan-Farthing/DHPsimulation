@@ -1,4 +1,6 @@
 # DHPsimulation
+to run this 
+721sim --disambig=0,0,0 --perf=1,1,1,1 -t --fq=64 --cp=32 --al=256 --lsq=128 --iq=64 --iqnp=4 --fw=4 --dw=4 --iw=8 --rw=4 pk if.riscv
 
 Any change that is made to a file will be included with a comment in the file in the following format <br />
 "DHP FIX <br />
