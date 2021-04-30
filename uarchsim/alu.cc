@@ -368,7 +368,7 @@ void pipeline_t::alu(unsigned int index) {
 
     //TODO: Add correct functionality
     case OP_OP_32:
-        // DHP FIX
+        //DHP FIX
         // alu operation for hammock branch with destination reg
         //if source reg is zero then set destination reg to 1 for taken, otherwise set to zero for not taken.
         if(PAY.buf[index].mux){

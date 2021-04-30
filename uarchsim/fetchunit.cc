@@ -181,7 +181,7 @@ void fetchunit_t::transfer_fetch_bundle() {
           //need to set the destination register for branch for CMOV to depend on.
           //the destination register is gonna be an reg 31
           PAY->buf[index].inst.clear();
-          //a4 is 14
+	  //a4 is 14
           PAY->buf[index].inst.set_rs1(14);
           PAY->buf[index].inst.set_rd(64);
           //insert OP_OP_32 opcode (0x3b)
@@ -265,10 +265,10 @@ void fetchunit_t::transfer_fetch_bundle() {
                   //PAY->buf[index].correct_region = true;
                   PAY->buf[index].mux=true;
                   PAY->buf[index].inst.clear();
-                  //a5 is 15
-                  PAY->buf[index].inst.set_rs1(15);
-                  //a3 is 13
-                  PAY->buf[index].inst.set_rs2(13);
+		  //a5 is 15
+		  PAY->buf[index].inst.set_rs1(15);
+	          //a3 is 13
+	          PAY->buf[index].inst.set_rs2(13);		  
                   PAY->buf[index].inst.set_rs3(64);
                   //a1 is 11
                   PAY->buf[index].inst.set_rd(11);                  
