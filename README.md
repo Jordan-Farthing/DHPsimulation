@@ -1,3 +1,6 @@
+# The base code for this project was provided by Eric Rotenburg NCSU for ece721
+# The main goal of this project is to alter the processor to execute both paths of a conditional branch instead of guessing the correct path to increase performance. When the correct path of a branch is determined, then squash the incorrect path. My changes to code are listed below.
+
 # DHPsimulation
 to run this 
 721sim --disambig=0,0,0 --perf=1,1,1,1 -t --fq=64 --cp=32 --al=256 --lsq=128 --iq=64 --iqnp=4 --fw=4 --dw=4 --iw=8 --rw=4 pk if.riscv
